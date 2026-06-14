@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, UpdateUserDto, ChangePasswordDto, PaginationDto } from './users.dto';
 import { ActivityService } from '../activity/activity.service';
 import { ActivityAction } from '../activity/schemas/activity-log.schema';
+import { EventsGateway } from '../events/events.gateway';
 
 // Helper to strip password from user object
 const excludePassword = (user: any) => {
@@ -22,7 +23,8 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private activityService: ActivityService,
-  ) {}
+    private eventsGateway: EventsGateway,
+  ) { }
 
   // ─── Create User ──────────────────────────────────────────
   async create(dto: CreateUserDto, requesterId?: string) {
@@ -61,9 +63,16 @@ export class UsersService {
           targetUserId: user.id,
           targetUserEmail: user.email,
           metadata: { createdUserEmail: dto.email },
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
+
+    this.eventsGateway.emitUserCreated(dto.companyId, {
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      role: user.role,
+    });
 
     return excludePassword(user);
   }
@@ -206,7 +215,7 @@ export class UsersService {
       userName: user.name,
       action: ActivityAction.PASSWORD_CHANGED,
       status: 'SUCCESS',
-    }).catch(() => {});
+    }).catch(() => { });
 
     return { message: 'Password changed successfully.' };
   }
@@ -237,9 +246,15 @@ export class UsersService {
           status: 'SUCCESS',
           targetUserId: user.id,
           targetUserEmail: user.email,
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
+
+    this.eventsGateway.emitUserDeactivated(user.companyId, {
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+    });
 
     return { message: `User "${user.name}" has been deactivated.` };
   }
