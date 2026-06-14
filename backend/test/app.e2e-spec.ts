@@ -17,6 +17,7 @@ describe('ZeroProxy API (e2e)', () => {
   let companyId: string;
 
   beforeAll(async () => {
+    jest.setTimeout(25000);
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

@@ -219,20 +219,12 @@ async function runTests() {
   // --- TEST 8: New User Created ---
   console.log('\nRunning TEST 8...');
   const userCreatedPromise = waitForEvent(adminSocket, 'user:created');
-
-  // Delete test-user if already exists
-  try {
-    const allUsers = await makeRequest(`${baseUrl}/users`, 'GET', null, { Authorization: `Bearer ${adminToken}` });
-    const existingUser = allUsers.data.data.find(u => u.email === 'newuser@test.com');
-    if (existingUser) {
-      await makeRequest(`${baseUrl}/users/${existingUser.id}`, 'DELETE', null, { Authorization: `Bearer ${adminToken}` });
-    }
-  } catch (err) {}
+  const testEmail = `ws_created_${Date.now()}@test.com`;
 
   // Trigger user creation via REST API
   const newUser = await makeRequest(`${baseUrl}/users`, 'POST', {
     name: 'New User',
-    email: 'newuser@test.com',
+    email: testEmail,
     password: 'Password@123',
     role: 'EMPLOYEE',
     companyId: empLogin3.data.user.companyId,
