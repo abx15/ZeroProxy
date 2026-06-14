@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  HR
+  EMPLOYEE
+}
+
+enum VerificationMethod {
+  FACE
+  PIN_FALLBACK
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  users     User[]
+}
+
+model User {
+  id             String             @id @default(uuid())
+  companyId      String
+  company        Company            @relation(fields: [companyId], references: [id])
+  email          String             @unique
+  name           String
+  password       String
+  role           Role               @default(EMPLOYEE)
+  isActive       Boolean            @default(true)
+  faceRegistered Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  attendance     AttendanceRecord[]
+  sessions       Session[]
+}
+
+model AttendanceRecord {
+  id                 String             @id @default(uuid())
+  userId             String
+  user               User               @relation(fields: [userId], references: [id])
+  checkIn            DateTime
+  checkOut           DateTime?
+  totalHours         Float?
+  ipAddress          String
+  deviceInfo         String
+  verificationMethod VerificationMethod @default(FACE)
+  createdAt          DateTime           @default(now())
+}
+
+model Session {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  token      String   @unique
+  deviceInfo String
+  ipAddress  String
+  isActive     Boolean  @default(true)
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+}
