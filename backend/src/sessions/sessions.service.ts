@@ -8,6 +8,7 @@ import { RedisService } from '../redis/redis.service';
 import { JwtService } from '@nestjs/jwt';
 import { ActivityService } from '../activity/activity.service';
 import { ActivityAction } from '../activity/schemas/activity-log.schema';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class SessionsService {
@@ -16,6 +17,7 @@ export class SessionsService {
     private redisService: RedisService,
     private jwtService: JwtService,
     private activityService: ActivityService,
+    private eventsGateway: EventsGateway,
   ) {}
 
   // ─── Get My Active Sessions ───────────────────────────────
@@ -122,7 +124,7 @@ export class SessionsService {
         user: { companyId: requesterCompanyId },
       },
       include: {
-        user: { select: { id: true, email: true } },
+        user: { select: { id: true, name: true, email: true } },
       },
     });
 
@@ -163,6 +165,14 @@ export class SessionsService {
           targetUserEmail: session.user.email,
           metadata: { sessionId },
         }).catch(() => {});
+
+        this.eventsGateway.emitForceLogout(requesterCompanyId, {
+          targetUserId: session.userId,
+          targetUserName: session.user?.name ?? 'Unknown',
+          byAdminEmail: requester.email,
+          sessionId,
+          allSessions: false,
+        });
       }
     }
 
@@ -227,6 +237,13 @@ export class SessionsService {
           targetUserId: targetUser.id,
           targetUserEmail: targetUser.email,
         }).catch(() => {});
+
+        this.eventsGateway.emitForceLogout(requesterCompanyId, {
+          targetUserId: targetUserId,
+          targetUserName: targetUser.name,
+          byAdminEmail: requester.email,
+          allSessions: true,
+        });
       }
     }
 
