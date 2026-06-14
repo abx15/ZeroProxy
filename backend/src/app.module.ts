@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { ActivityModule } from './activity/activity.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ActivityModule } from './activity/activity.module';
     AttendanceModule,
     SessionsModule,
     ActivityModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
