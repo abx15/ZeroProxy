@@ -6,12 +6,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CheckInDto, CheckOutDto, AttendanceQueryDto } from './attendance.dto';
 import { ActivityService } from '../activity/activity.service';
 import { ActivityAction } from '../activity/schemas/activity-log.schema';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     private prisma: PrismaService,
     private activityService: ActivityService,
+    private eventsGateway: EventsGateway,
   ) {}
 
   // ─── Check In ─────────────────────────────────────────────
@@ -40,7 +42,7 @@ export class AttendanceService {
         verificationMethod: dto.verificationMethod ?? 'FACE',
       },
       include: {
-        user: { select: { name: true, email: true, companyId: true } },
+        user: { select: { id: true, name: true, email: true, companyId: true } },
       },
     });
 
@@ -55,6 +57,15 @@ export class AttendanceService {
       deviceInfo: dto.deviceInfo,
       metadata: { deviceInfo: dto.deviceInfo, ipAddress },
     }).catch(() => {});
+
+    this.eventsGateway.emitCheckIn(record.user.companyId, {
+      userId: record.user.id,
+      userName: record.user.name,
+      userEmail: record.user.email,
+      checkIn: record.checkIn,
+      deviceInfo: dto.deviceInfo,
+      ipAddress,
+    });
 
     return {
       message: `Welcome ${record.user.name}! Check-in successful.`,
@@ -77,7 +88,7 @@ export class AttendanceService {
       },
       orderBy: { checkIn: 'desc' },
       include: {
-        user: { select: { name: true, email: true, companyId: true } },
+        user: { select: { id: true, name: true, email: true, companyId: true } },
       },
     });
 
@@ -113,6 +124,14 @@ export class AttendanceService {
       deviceInfo: activeRecord.deviceInfo,
       metadata: { totalHours },
     }).catch(() => {});
+
+    this.eventsGateway.emitCheckOut(activeRecord.user.companyId, {
+      userId: activeRecord.user.id,
+      userName: activeRecord.user.name,
+      userEmail: activeRecord.user.email,
+      checkOut: checkOutTime,
+      totalHours,
+    });
 
     return {
       message: `Goodbye ${activeRecord.user.name}! Check-out successful.`,
