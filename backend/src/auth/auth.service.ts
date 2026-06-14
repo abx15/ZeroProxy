@@ -11,6 +11,7 @@ import { RedisService } from '../redis/redis.service';
 import { LoginDto } from './auth.dto';
 import { ActivityService } from '../activity/activity.service';
 import { ActivityAction } from '../activity/schemas/activity-log.schema';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
     private redisService: RedisService,
     private activityService: ActivityService,
+    private eventsGateway: EventsGateway,
   ) {}
 
   // ─── Login ───────────────────────────────────────────────
@@ -99,6 +101,15 @@ export class AuthService {
       deviceInfo,
     }).catch(() => {});
 
+    this.eventsGateway.emitUserLogin(user.companyId, {
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      role: user.role,
+      ipAddress,
+      deviceInfo,
+    });
+
     return {
       accessToken,
       refreshToken,
@@ -175,6 +186,12 @@ export class AuthService {
         action: ActivityAction.LOGOUT,
         status: 'SUCCESS',
       }).catch(() => {});
+
+      this.eventsGateway.emitUserLogout(user.companyId, {
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+      });
     }
 
     return { message: 'Logged out successfully.' };
