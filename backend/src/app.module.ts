@@ -12,6 +12,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { ActivityModule } from './activity/activity.module';
 import { EventsModule } from './events/events.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { EventsModule } from './events/events.module';
         JWT_SECRET: Joi.string().min(32).required(),
         JWT_REFRESH_SECRET: Joi.string().min(32).required(),
         AI_SERVICE_URL: Joi.string().default('http://localhost:8000'),
+        INTERNAL_API_KEY: Joi.string().required(),
       }),
     }),
     MongooseModule.forRoot(
@@ -42,6 +44,7 @@ import { EventsModule } from './events/events.module';
     SessionsModule,
     ActivityModule,
     EventsModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
