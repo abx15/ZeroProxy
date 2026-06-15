@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.database import get_db
+from app.utils.auth import verify_internal_key
 from app.schemas.face import FaceRegisterRequest, FaceRegisterResponse
 from app.services.face_service import face_service
 from app.models.face_embedding import FaceEmbedding
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/face", tags=["Face Registration"])
 async def register_face(
     request: FaceRegisterRequest,
     db: Session = Depends(get_db),
+    _: bool = Depends(verify_internal_key),
 ):
     """
     Register employee face.
@@ -87,6 +89,7 @@ async def register_face(
 async def delete_face_registration(
     user_id: str,
     db: Session = Depends(get_db),
+    _: bool = Depends(verify_internal_key),
 ):
     """Deactivate face registration for a user (soft delete)"""
 
@@ -113,6 +116,7 @@ async def delete_face_registration(
 async def get_registration_status(
     user_id: str,
     db: Session = Depends(get_db),
+    _: bool = Depends(verify_internal_key),
 ):
     """Check if a user has registered their face"""
 
@@ -141,6 +145,7 @@ async def get_registration_status(
 async def get_company_registrations(
     company_id: str,
     db: Session = Depends(get_db),
+    _: bool = Depends(verify_internal_key),
 ):
     """Get all face registrations for a company"""
 
