@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     PORT: int = 8000
     ENVIRONMENT: str = "development"
 
+    # Internal API security
+    INTERNAL_API_KEY: str = "zeroproxy_internal_key_change_in_production"
+
     # Database
     DATABASE_URL: str
 
