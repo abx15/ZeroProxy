@@ -17,10 +17,13 @@ class FaceVerifyRequest(BaseModel):
 class LivenessCheckRequest(BaseModel):
     frames: List[str] = Field(
         ...,
-        min_length=3,
-        max_length=10,
         description="List of 3-10 base64 encoded frames captured over 2-3 seconds"
     )
+
+class FaceLoginCheckRequest(BaseModel):
+    user_id: str = Field(..., description="User UUID to check")
+    image_base64: str = Field(..., description="Base64 encoded image for face verification")
+    liveness_frames: List[str] = Field(..., description="List of base64 encoded liveness frames")
 
 class LivenessSingleRequest(BaseModel):
     image_base64: str = Field(..., description="Base64 encoded image to check")
