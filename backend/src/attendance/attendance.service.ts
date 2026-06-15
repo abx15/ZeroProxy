@@ -1,12 +1,14 @@
 import {
   Injectable,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CheckInDto, CheckOutDto, AttendanceQueryDto } from './attendance.dto';
 import { ActivityService } from '../activity/activity.service';
 import { ActivityAction } from '../activity/schemas/activity-log.schema';
 import { EventsGateway } from '../events/events.gateway';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class AttendanceService {
@@ -14,10 +16,26 @@ export class AttendanceService {
     private prisma: PrismaService,
     private activityService: ActivityService,
     private eventsGateway: EventsGateway,
+    private aiService: AiService,
   ) {}
 
   // ─── Check In ─────────────────────────────────────────────
   async checkIn(userId: string, dto: CheckInDto, ipAddress: string) {
+    // If face verification data provided, verify before check-in
+    if (dto.imageBase64 && dto.livenessFrames) {
+      const faceResult = await this.aiService.faceLoginCheck(
+        userId,
+        dto.imageBase64,
+        dto.livenessFrames,
+      );
+
+      if (!faceResult.verified || !faceResult.is_live) {
+        throw new UnauthorizedException(
+          faceResult.message || 'Face verification failed. Cannot check in.'
+        );
+      }
+    }
+
     // Check already checked in today (no checkout yet)
     const activeSession = await this.prisma.attendanceRecord.findFirst({
       where: {
