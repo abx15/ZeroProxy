@@ -1,17 +1,21 @@
 import base64
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 
 from app.schemas.face import LivenessCheckRequest, LivenessResponse, LivenessSingleRequest
 from app.services.liveness_service import liveness_service
 from app.utils.image_utils import decode_base64_image
+from app.utils.auth import verify_internal_key
 
 router = APIRouter(prefix="/liveness", tags=["Liveness Detection"])
 
 
 @router.post("/check", response_model=LivenessResponse)
-async def check_liveness(request: LivenessCheckRequest):
+async def check_liveness(
+    request: LivenessCheckRequest,
+    _: bool = Depends(verify_internal_key),
+):
     """
     Check if person is real (live) or a spoof (photo/video).
 
@@ -61,7 +65,10 @@ async def check_liveness(request: LivenessCheckRequest):
 
 
 @router.post("/check/detailed", tags=["Liveness Detection"])
-async def check_liveness_detailed(request: LivenessCheckRequest):
+async def check_liveness_detailed(
+    request: LivenessCheckRequest,
+    _: bool = Depends(verify_internal_key),
+):
     """
     Same as /check but returns full frame-by-frame analysis.
     Useful for debugging and fine-tuning threshold.
@@ -94,7 +101,10 @@ async def check_liveness_detailed(request: LivenessCheckRequest):
 
 
 @router.post("/check/single", tags=["Liveness Detection"])
-async def check_single_frame(request: LivenessSingleRequest):
+async def check_single_frame(
+    request: LivenessSingleRequest,
+    _: bool = Depends(verify_internal_key),
+):
     """
     Analyze a single frame — returns EAR and head pose.
     For testing/debugging only.
@@ -124,7 +134,9 @@ async def check_single_frame(request: LivenessSingleRequest):
 
 
 @router.get("/info", tags=["Liveness Detection"])
-async def get_liveness_info():
+async def get_liveness_info(
+    _: bool = Depends(verify_internal_key),
+):
     """Get liveness detection configuration and thresholds"""
     return {
         "model": "MediaPipe FaceMesh",
