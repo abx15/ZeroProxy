@@ -3,9 +3,10 @@ import { AttendanceService } from './attendance.service';
 import { AttendanceController } from './attendance.controller';
 import { ActivityModule } from '../activity/activity.module';
 import { EventsModule } from '../events/events.module';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
-  imports: [ActivityModule, EventsModule],
+  imports: [AiModule, ActivityModule, EventsModule],
   controllers: [AttendanceController],
   providers: [AttendanceService],
   exports: [AttendanceService],
