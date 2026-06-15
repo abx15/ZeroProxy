@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsEnum, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsEnum, IsUUID, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { VerificationMethod } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -12,6 +12,16 @@ export class CheckInDto {
   @IsEnum(VerificationMethod)
   @IsOptional()
   verificationMethod?: VerificationMethod = 'FACE';
+
+  @ApiPropertyOptional({ description: 'Base64 encoded face image' })
+  @IsOptional()
+  @IsString()
+  imageBase64?: string;
+
+  @ApiPropertyOptional({ description: 'List of base64 frames for liveness detection' })
+  @IsOptional()
+  @IsArray()
+  livenessFrames?: string[];
 }
 
 export class CheckOutDto {
