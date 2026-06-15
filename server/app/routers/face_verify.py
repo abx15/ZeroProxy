@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 import numpy as np
 
 from app.database import get_db
-from app.schemas.face import FaceVerifyRequest, FaceVerifyResponse, FaceCompareRequest, FaceCompareResponse
+from app.schemas.face import FaceVerifyRequest, FaceVerifyResponse, FaceCompareRequest, FaceCompareResponse, FaceLoginCheckRequest
 from app.services.face_service import face_service
 from app.models.face_embedding import FaceEmbedding
+from app.utils.auth import verify_internal_key
 from app.utils.image_utils import decode_base64_image, validate_image_size, check_image_quality
 from app.config import settings
 
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/face", tags=["Face Verification"])
 async def verify_face(
     request: FaceVerifyRequest,
     db: Session = Depends(get_db),
+    _: bool = Depends(verify_internal_key),
 ):
     """
     Verify employee face at login time.
@@ -101,6 +103,7 @@ async def verify_face(
 async def verify_face_batch(
     requests: list[FaceVerifyRequest],
     db: Session = Depends(get_db),
+    _: bool = Depends(verify_internal_key),
 ):
     """
     Verify multiple faces at once.
@@ -163,6 +166,7 @@ async def verify_face_batch(
 @router.post("/compare", response_model=FaceCompareResponse, tags=["Face Verification"])
 async def compare_two_faces(
     request: FaceCompareRequest,
+    _: bool = Depends(verify_internal_key),
 ):
     """
     Compare two face images directly.
@@ -208,7 +212,9 @@ def _interpret_similarity(score: float) -> str:
 
 
 @router.get("/verify/threshold", tags=["Face Verification"])
-async def get_threshold_info():
+async def get_threshold_info(
+    _: bool = Depends(verify_internal_key),
+):
     """Get current threshold settings"""
     return {
         "current_threshold": settings.FACE_MATCH_THRESHOLD,
@@ -217,4 +223,98 @@ async def get_threshold_info():
         "balanced": settings.FACE_MATCH_THRESHOLD,
         "lenient": settings.LENIENT_THRESHOLD,
         "note": "Higher threshold = more strict = fewer false accepts but more false rejects",
+    }
+
+
+@router.post("/login-check", tags=["Face Verification"])
+async def face_login_check(
+    request: FaceLoginCheckRequest,
+    db: Session = Depends(get_db),
+    _: bool = Depends(verify_internal_key),
+):
+    """
+    Combined endpoint — NestJS calls this for face login.
+    Steps:
+    1. Liveness check first (3+ frames)
+    2. Face verification (single image)
+    3. Returns combined result
+    """
+    from app.services.liveness_service import liveness_service
+    from app.utils.image_utils import decode_base64_image
+    from app.models.face_embedding import FaceEmbedding
+
+    user_id = request.user_id
+    image_base64 = request.image_base64
+    liveness_frames = request.liveness_frames
+
+    # Step 1: Liveness check
+    if len(liveness_frames) < 3:
+        return {
+            "success": False,
+            "step_failed": "liveness",
+            "message": "Minimum 3 frames required for liveness check.",
+            "verified": False,
+            "is_live": False,
+        }
+
+    frame_analyses = []
+    for frame_b64 in liveness_frames:
+        try:
+            img_array = decode_base64_image(frame_b64)
+            analysis = liveness_service.analyze_frame(img_array)
+            frame_analyses.append(analysis)
+        except Exception:
+            frame_analyses.append({"face_detected": False})
+
+    liveness_result = liveness_service.check_liveness_from_frames(frame_analyses)
+
+    if not liveness_result["is_live"]:
+        return {
+            "success": False,
+            "step_failed": "liveness",
+            "message": liveness_result["reason"],
+            "verified": False,
+            "is_live": False,
+            "liveness_confidence": liveness_result["confidence"],
+        }
+
+    # Step 2: Face verification
+    stored_record = db.query(FaceEmbedding).filter(
+        FaceEmbedding.user_id == user_id,
+        FaceEmbedding.is_active == True,
+    ).first()
+
+    if not stored_record:
+        return {
+            "success": False,
+            "step_failed": "verification",
+            "message": "No face registration found. Please register first.",
+            "verified": False,
+            "is_live": True,
+        }
+
+    try:
+        img_array = decode_base64_image(image_base64)
+        live_embedding, quality_score = face_service.get_embedding(img_array)
+        stored_embedding = face_service.list_to_embedding(stored_record.embedding)
+        similarity = face_service.calculate_similarity(live_embedding, stored_embedding)
+        is_verified = similarity >= settings.FACE_MATCH_THRESHOLD
+    except HTTPException as e:
+        return {
+            "success": False,
+            "step_failed": "verification",
+            "message": e.detail,
+            "verified": False,
+            "is_live": True,
+        }
+
+    return {
+        "success": True,
+        "step_failed": None,
+        "message": "Face login successful." if is_verified else "Face does not match.",
+        "verified": is_verified,
+        "is_live": True,
+        "confidence": round(similarity, 4),
+        "threshold": settings.FACE_MATCH_THRESHOLD,
+        "liveness_confidence": liveness_result["confidence"],
     }
