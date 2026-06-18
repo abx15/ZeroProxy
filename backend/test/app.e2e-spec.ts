@@ -7,6 +7,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('ZeroProxy API (e2e)', () => {
   let app: INestApplication;
@@ -60,6 +61,12 @@ describe('ZeroProxy API (e2e)', () => {
 
       employeeToken = res.body.data.accessToken;
       employeeUserId = res.body.data.user.id;
+
+      // Clean up pre-existing check-in records for testing employee
+      const prisma = app.get(PrismaService);
+      await prisma.attendanceRecord.deleteMany({
+        where: { userId: employeeUserId },
+      });
     });
 
     it('should return 401 on wrong password', async () => {
