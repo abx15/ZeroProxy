@@ -58,7 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => {
       globalSocket?.disconnect();
     };
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, router]);
 
   if (!isAuthenticated || !user) {
     return (
