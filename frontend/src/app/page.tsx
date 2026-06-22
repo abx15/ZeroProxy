@@ -18,7 +18,7 @@ export default function RootPage() {
     } else {
       router.push('/login');
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, router]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
