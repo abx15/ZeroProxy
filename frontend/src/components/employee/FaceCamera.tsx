@@ -12,7 +12,6 @@ interface FaceCameraProps {
 export function FaceCamera({ onCapture, isProcessing = false, mode = 'register' }: FaceCameraProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
 
@@ -32,13 +31,12 @@ export function FaceCamera({ onCapture, isProcessing = false, mode = 'register' 
           audio: false,
         });
         activeStream = mediaStream;
-        setStream(mediaStream);
 
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
           setIsCameraReady(true);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Camera access error:', err);
         setError('Unable to access camera. Please check camera permissions.');
       }
