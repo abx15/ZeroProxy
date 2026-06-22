@@ -23,7 +23,7 @@ export function AdminSidebar({ socketConnected }: { socketConnected?: boolean })
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-border">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
@@ -77,7 +77,7 @@ export function AdminSidebar({ socketConnected }: { socketConnected?: boolean })
   return (
     <>
       <aside className="hidden md:flex flex-col w-56 bg-card border-r border-border h-screen sticky top-0 shrink-0">
-        <SidebarContent />
+        {sidebarContent}
       </aside>
 
       <div className="md:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border sticky top-0 z-30">
@@ -99,7 +99,7 @@ export function AdminSidebar({ socketConnected }: { socketConnected?: boolean })
             <button onClick={() => setMobileOpen(false)} className="absolute top-4 right-4 p-1 rounded-lg hover:bg-background">
               <X className="w-4 h-4 text-slate-600" />
             </button>
-            <SidebarContent />
+            {sidebarContent}
           </div>
         </div>
       )}
