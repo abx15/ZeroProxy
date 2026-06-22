@@ -7,19 +7,33 @@ import { Badge } from '@/components/ui/Badge';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuthStore } from '@/store/auth.store';
 import { formatTime, formatDate, formatHours } from '@/lib/utils';
+import { AttendanceRecord } from '@/types';
 import toast from 'react-hot-toast';
+
+interface TodayStatus {
+  status: 'CHECKED_IN' | 'CHECKED_OUT' | 'NOT_CHECKED_IN';
+  record?: (AttendanceRecord & { liveHours?: string }) | null;
+}
+
+interface MonthlyReport {
+  summary: {
+    workingDays: number;
+    totalHours: number;
+    avgHoursPerDay: number;
+  };
+}
 
 export default function EmployeeDashboardPage() {
   const { user } = useAuthStore();
-  const [todayStatus, setTodayStatus] = useState<any>(null);
-  const [monthlyReport, setMonthlyReport] = useState<any>(null);
-  const [recentAttendance, setRecentAttendance] = useState<any[]>([]);
+  const [todayStatus, setTodayStatus] = useState<TodayStatus | null>(null);
+  const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
+  const [recentAttendance, setRecentAttendance] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (showSpinner = false) => {
     try {
-      setIsLoading(true);
+      if (showSpinner) setIsLoading(true);
       const now = new Date();
       const [todayRes, reportRes, recentRes] = await Promise.all([
         attendanceApi.today(),
@@ -39,7 +53,11 @@ export default function EmployeeDashboardPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      loadData();
+    });
+  }, []);
 
   const handleCheckIn = async () => {
     setIsCheckingIn(true);
@@ -130,7 +148,7 @@ export default function EmployeeDashboardPage() {
               )}
               {isCheckedOut && todayStatus.record && (
                 <p className="text-sm text-slate-500 mt-0.5">
-                  {formatTime(todayStatus.record.checkIn)} → {formatTime(todayStatus.record.checkOut)} ·{' '}
+                  {formatTime(todayStatus.record.checkIn)} → {formatTime(todayStatus.record.checkOut!)} ·{' '}
                   <span className="text-primary font-medium">{formatHours(todayStatus.record.totalHours)}</span>
                 </p>
               )}
@@ -197,7 +215,7 @@ export default function EmployeeDashboardPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {recentAttendance.map((record: any) => (
+            {recentAttendance.map((record) => (
               <div key={record.id}
                 className="flex items-center justify-between py-3 border-b border-border last:border-0">
                 <div>
