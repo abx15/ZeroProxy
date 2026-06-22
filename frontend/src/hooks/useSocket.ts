@@ -1,52 +1,61 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3001';
 
-export function useSocket(onEvent?: (event: string, data: any) => void) {
-  const socketRef = useRef<Socket | null>(null);
+export function useSocket(onEvent?: (event: string, data: unknown) => void) {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const onEventRef = useRef(onEvent);
+
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
 
   useEffect(() => {
     const token = Cookies.get('accessToken');
     if (!token) return;
 
-    socketRef.current = io(`${WS_URL}/events`, {
+    const socketInstance = io(`${WS_URL}/events`, {
       auth: { token },
       transports: ['websocket'],
     });
 
-    socketRef.current.on('connect', () => {
+    const timer = setTimeout(() => {
+      setSocket(socketInstance);
+    }, 0);
+
+    socketInstance.on('connect', () => {
       console.log('✅ WebSocket connected');
     });
 
-    socketRef.current.on('disconnect', () => {
+    socketInstance.on('disconnect', () => {
       console.log('❌ WebSocket disconnected');
     });
 
-    // Forward all events to callback
-    if (onEvent) {
-      const events = [
-        'employee:checkin',
-        'employee:checkout',
-        'user:login',
-        'user:logout',
-        'session:force-logout',
-        'user:created',
-        'user:deactivated',
-        'stats:update',
-      ];
+    const events = [
+      'employee:checkin',
+      'employee:checkout',
+      'user:login',
+      'user:logout',
+      'session:force-logout',
+      'user:created',
+      'user:deactivated',
+      'stats:update',
+    ];
 
-      events.forEach((event) => {
-        socketRef.current?.on(event, (data) => onEvent(event, data));
+    events.forEach((event) => {
+      socketInstance.on(event, (data) => {
+        onEventRef.current?.(event, data);
       });
-    }
+    });
 
     return () => {
-      socketRef.current?.disconnect();
+      clearTimeout(timer);
+      socketInstance.disconnect();
     };
   }, []);
 
-  return socketRef.current;
+  return socket;
 }
