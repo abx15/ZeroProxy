@@ -74,7 +74,7 @@ export interface ActivityLog {
   userName: string;
   action: string;
   status: 'SUCCESS' | 'FAILED';
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   ipAddress: string;
   deviceInfo: string;
   createdAt: string;
