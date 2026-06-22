@@ -24,10 +24,11 @@ export function useAuth() {
       }
 
       return { success: true };
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as { response?: { data?: { message?: string } } };
       return {
         success: false,
-        message: err.response?.data?.message || 'Login failed',
+        message: error.response?.data?.message || 'Login failed',
       };
     }
   };
