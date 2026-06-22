@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Circle, LogIn, LogOut, Clock, UserPlus, ShieldAlert } from 'lucide-react';
+import { Circle, LogIn, LogOut, Clock, UserPlus, ShieldAlert, LucideIcon } from 'lucide-react';
 import { getAdminSocket } from '@/app/admin/layout';
 
 interface FeedEvent {
@@ -10,7 +10,7 @@ interface FeedEvent {
   timestamp: string;
 }
 
-const eventConfig: Record<string, { icon: any; color: string }> = {
+const eventConfig: Record<string, { icon: LucideIcon; color: string }> = {
   'employee:checkin': { icon: Clock, color: 'text-success bg-success-50' },
   'employee:checkout': { icon: Clock, color: 'text-primary bg-primary-50' },
   'user:login': { icon: LogIn, color: 'text-secondary bg-secondary/10' },
@@ -26,7 +26,10 @@ export function LiveActivityFeed() {
     const socket = getAdminSocket();
     if (!socket) return;
 
-    const handlers: Record<string, (data: any) => void> = {
+    const handlers: Record<
+      string,
+      (data: { userName?: string; targetUserName?: string; totalHours?: number }) => void
+    > = {
       'employee:checkin': (d) => addEvent('employee:checkin', `${d.userName} checked in`),
       'employee:checkout': (d) => addEvent('employee:checkout', `${d.userName} checked out (${d.totalHours}h)`),
       'user:login': (d) => addEvent('user:login', `${d.userName} logged in`),
