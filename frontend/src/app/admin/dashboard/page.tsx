@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Users, UserCheck, UserX, Clock, TrendingUp, Activity as ActivityIcon } from 'lucide-react';
+import { Users, UserCheck, UserX, Clock, Activity as ActivityIcon } from 'lucide-react';
 import { usersApi, attendanceApi, sessionsApi } from '@/lib/api';
 import { StatsCard } from '@/components/admin/StatsCard';
 import { LiveActivityFeed } from '@/components/admin/LiveActivityFeed';
@@ -9,10 +9,36 @@ import { Spinner } from '@/components/ui/Spinner';
 import { formatTime } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
+interface UserStats {
+  total: number;
+  active: number;
+}
+
+interface DailySummary {
+  summary: {
+    present: number;
+    totalEmployees: number;
+    absent: number;
+    averageHours: number;
+  };
+  records: Array<{
+    userId: string;
+    name: string;
+    email: string;
+    checkIn: string;
+    checkOut: string | null;
+    status: 'CHECKED_IN' | 'CHECKED_OUT';
+  }>;
+}
+
+interface LiveStats {
+  onlineNow: number;
+}
+
 export default function AdminDashboardPage() {
-  const [userStats, setUserStats] = useState<any>(null);
-  const [dailySummary, setDailySummary] = useState<any>(null);
-  const [liveStats, setLiveStats] = useState<any>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
+  const [liveStats, setLiveStats] = useState<LiveStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
@@ -33,8 +59,14 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 30000); // refresh every 30s
+    Promise.resolve().then(() => {
+      loadData();
+    });
+    const interval = setInterval(() => {
+      Promise.resolve().then(() => {
+        loadData();
+      });
+    }, 30000); // refresh every 30s
     return () => clearInterval(interval);
   }, []);
 
@@ -66,10 +98,10 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Today's records */}
+        {/* Today&apos;s records */}
         <div className="lg:col-span-2 zp-card space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-text-main">Today's Attendance</h3>
+            <h3 className="font-semibold text-text-main">Today&apos;s Attendance</h3>
             <a href="/admin/attendance" className="text-xs text-primary hover:underline">View all</a>
           </div>
 
@@ -80,7 +112,7 @@ export default function AdminDashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {dailySummary?.records?.slice(0, 8).map((r: any) => (
+              {dailySummary?.records?.slice(0, 8).map((r) => (
                 <div key={r.userId} className="flex items-center justify-between py-2.5 border-b border-border last:border-0">
                   <div>
                     <p className="text-sm font-medium text-text-main">{r.name}</p>
