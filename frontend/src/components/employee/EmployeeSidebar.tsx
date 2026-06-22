@@ -21,7 +21,7 @@ export function EmployeeSidebar() {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-border">
@@ -87,7 +87,7 @@ export function EmployeeSidebar() {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex flex-col w-56 bg-card border-r border-border h-screen sticky top-0 shrink-0">
-        <SidebarContent />
+        {sidebarContent}
       </aside>
 
       {/* Mobile top bar */}
@@ -112,7 +112,7 @@ export function EmployeeSidebar() {
               className="absolute top-4 right-4 p-1 rounded-lg hover:bg-background cursor-pointer">
               <X className="w-4 h-4 text-slate-600" />
             </button>
-            <SidebarContent />
+            {sidebarContent}
           </div>
         </div>
       )}
