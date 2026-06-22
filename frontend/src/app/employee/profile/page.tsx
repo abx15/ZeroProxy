@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Key, CheckCircle, Camera } from 'lucide-react';
+import { Shield, Key, CheckCircle, Camera } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import api, { usersApi, aiApi } from '@/lib/api';
 import { Avatar } from '@/components/ui/Avatar';
