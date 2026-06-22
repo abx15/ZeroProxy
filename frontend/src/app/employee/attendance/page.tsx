@@ -1,16 +1,25 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { attendanceApi } from '@/lib/api';
 import { Badge } from '@/components/ui/Badge';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatDate, formatTime, formatHours } from '@/lib/utils';
+import { AttendanceRecord, PaginationMeta } from '@/types';
 import toast from 'react-hot-toast';
 
+interface MonthlyReport {
+  summary?: {
+    workingDays?: number;
+    totalHours?: number;
+    avgHoursPerDay?: number;
+  };
+}
+
 export default function AttendancePage() {
-  const [records, setRecords] = useState<any[]>([]);
-  const [meta, setMeta] = useState<any>(null);
-  const [monthlyReport, setMonthlyReport] = useState<any>(null);
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [monthlyReport, setMonthlyReport] = useState<MonthlyReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
 
@@ -18,7 +27,7 @@ export default function AttendancePage() {
   const [selectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear] = useState(now.getFullYear());
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       const [recordsRes, reportRes] = await Promise.all([
@@ -33,9 +42,13 @@ export default function AttendancePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, selectedMonth, selectedYear]);
 
-  useEffect(() => { loadData(); }, [page]);
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      loadData();
+    });
+  }, [loadData]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -76,7 +89,7 @@ export default function AttendancePage() {
         ) : (
           <>
             <div className="space-y-2">
-              {records.map((r: any) => (
+              {records.map((r) => (
                 <div key={r.id}
                   className="flex items-center justify-between p-3 rounded-xl bg-background border border-border hover:border-primary/30 transition-colors">
                   <div className="flex items-center gap-3">
