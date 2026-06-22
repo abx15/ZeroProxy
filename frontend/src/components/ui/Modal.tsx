@@ -1,40 +1,34 @@
 'use client';
-import React from 'react';
 import { X } from 'lucide-react';
-import { Card } from './Card';
+import { useEffect } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
+  title: string;
   children: React.ReactNode;
 }
 
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+  useEffect(() => {
+    if (isOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-lg animate-slide-up">
-        <Card className="shadow-modal max-h-[90vh] flex flex-col p-6 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-border">
-            <h3 className="text-lg font-bold text-text-main">
-              {title}
-            </h3>
-            <button
-              onClick={onClose}
-              className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          {/* Body */}
-          <div className="py-4 overflow-y-auto min-h-0">
-            {children}
-          </div>
-        </Card>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-card rounded-2xl shadow-modal w-full max-w-md max-h-[90vh] overflow-auto animate-slide-up">
+        <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card">
+          <h3 className="font-semibold text-text-main">{title}</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-background text-slate-400">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5">{children}</div>
       </div>
     </div>
   );
